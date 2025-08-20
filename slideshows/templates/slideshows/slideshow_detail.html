@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ slideshow.title }}</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8ffae 0%, #43c6ac 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            transition: background 0.5s;
+        }
+        h1 {
+            color: #2d3a4b;
+            text-align: center;
+            margin-top: 40px;
+            letter-spacing: 2px;
+        }
+        #slideshow {
+            width: 420px;
+            height: 320px;
+            margin: 40px auto;
+            border: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #43c6ac 0%, #f8ffae 100%);
+            border-radius: 32px 8px 32px 8px;
+            box-shadow: 0 8px 32px 0 rgba(67,198,172,0.25), 0 1.5px 8px 0 #fffbe7;
+            overflow: hidden;
+            position: relative;
+            animation: popbox 1.2s cubic-bezier(.68,-0.55,.27,1.55);
+        }
+        @keyframes popbox {
+            0% { transform: scale(0.7) rotate(-8deg); opacity: 0; }
+            60% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        #slideshow::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 32px 8px 32px 8px;
+            background: linear-gradient(120deg, #43c6ac44 0%, #f8ffae44 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+        #slideshow img {
+            position: relative;
+            z-index: 2;
+        }
+        #slideshow img {
+            max-width: 100%;
+            max-height: 100%;
+            opacity: 1;
+            transition: opacity 0.6s cubic-bezier(.68,-0.55,.27,1.55);
+        }
+        #slideshow img.fade {
+            opacity: 0;
+        }
+        #caption {
+            text-align: center;
+            margin-top: 10px;
+            color: #2d3a4b;
+            font-size: 1.1em;
+        }
+        .balloon-float {
+            position: fixed;
+            left: 50%;
+            bottom: 0;
+            transform: translate(-50%, 0) scale(1);
+            font-size: 120px;
+            z-index: 9999;
+            transition: bottom 1.2s cubic-bezier(.68,-0.55,.27,1.55), transform 0.7s, font-size 0.7s;
+            will-change: bottom, transform, font-size;
+            pointer-events: none;
+        }
+        .balloon-float.center {
+            bottom: 50%;
+            left: 50%;
+            transform: translate(-50%, 50%) scale(1.2);
+        }
+        .balloon-float.blast {
+            left: 50%;
+            top: 50%;
+            bottom: auto;
+            right: auto;
+            width: 0;
+            height: 0;
+            background: transparent;
+            font-size: 0;
+            border-radius: 50%;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: blast-center 0.7s forwards cubic-bezier(.68,-0.55,.27,1.55);
+        }
+        @keyframes blast-center {
+            0% {
+                width: 120px;
+                height: 120px;
+                background: transparent;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, 50%) scale(1.2);
+            }
+            80% {
+                background: linear-gradient(135deg, #f8ffae 0%, #43c6ac 100%);
+            }
+            100% {
+                width: 100vw;
+                height: 100vh;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%) scale(1);
+                background: linear-gradient(135deg, #f8ffae 0%, #43c6ac 100%);
+            }
+        }
+        .balloon-float.blast::after {
+            content: '💥';
+            display: block;
+            font-size: 10vw;
+            text-align: center;
+            margin: 0 auto;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+        #main-content { transition: opacity 0.7s; }
+        #main-content.hide { opacity: 0; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="balloon"></div>
+    <div id="main-content" class="hide">
+        <h1>{{ slideshow.title }}</h1>
+        {% load static %}
+        <div id="slideshow">
+            {% if slideshow.images.all %}
+                <img id="slide-img" src="{{ slideshow.images.all.0.image.url }}" alt="Slide">
+            {% else %}
+                <p>No images available.</p>
+            {% endif %}
+        </div>
+        <div id="caption">{% if slideshow.images.all %}{{ slideshow.images.all.0.caption }}{% endif %}</div>
+        <button onclick="prevSlide()">Previous</button>
+        <button onclick="nextSlide()">Next</button>
+    </div>
+    <script>
+        // Balloon float and blast effect
+        window.onload = function() {
+            const balloon = document.getElementById('balloon');
+            balloon.className = 'balloon-float';
+            balloon.innerText = '🎈';
+            setTimeout(() => {
+                balloon.classList.add('center');
+                setTimeout(() => {
+                    balloon.classList.add('blast');
+                    balloon.innerText = '';
+                    setTimeout(() => {
+                        balloon.remove();
+                        document.getElementById('main-content').classList.remove('hide');
+                    }, 900);
+                }, 900);
+            }, 900);
+        };
+
+        // Slideshow logic with fade effect
+        const images = [
+            {% for img in slideshow.images.all %}
+                { url: "{{ img.image.url }}", caption: "{{ img.caption|escapejs }}" },
+            {% endfor %}
+        ];
+        let current = 0;
+        let autoSlideInterval = null;
+        function showSlide(idx) {
+            if (images.length === 0) return;
+            const img = document.getElementById('slide-img');
+            img.classList.add('fade');
+            setTimeout(() => {
+                current = (idx + images.length) % images.length;
+                img.src = images[current].url;
+                document.getElementById('caption').innerText = images[current].caption;
+                img.classList.remove('fade');
+            }, 400);
+        }
+        function prevSlide() {
+            showSlide(current - 1);
+            resetAutoSlide();
+        }
+        function nextSlide() {
+            showSlide(current + 1);
+            resetAutoSlide();
+        }
+        function startAutoSlide() {
+            if (autoSlideInterval) clearInterval(autoSlideInterval);
+            autoSlideInterval = setInterval(() => {
+                showSlide(current + 1);
+            }, 1000);
+        }
+        function resetAutoSlide() {
+            startAutoSlide();
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            startAutoSlide();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Slideshow List</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8ffae 0%, #43c6ac 100%);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            transition: background 0.5s;
+        }
+        h1 {
+            color: #2d3a4b;
+            text-align: center;
+            margin-top: 40px;
+            letter-spacing: 2px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            max-width: 500px;
+            margin: 40px auto;
+            background: rgba(255,255,255,0.8);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(67,198,172,0.15);
+        }
+        li {
+            padding: 18px 0;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: center;
+        }
+        li:last-child { border-bottom: none; }
+        .slideshow-link {
+            cursor: pointer;
+            color: #43c6ac;
+            text-decoration: none;
+            font-size: 1.3em;
+            font-weight: 600;
+            transition: color 0.3s, text-shadow 0.3s;
+        }
+        .slideshow-link:hover {
+            color: #2d3a4b;
+            text-shadow: 0 2px 8px #43c6ac44;
+        }
+        .balloon-pop {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) scale(1);
+            font-size: 120px;
+            z-index: 9999;
+            transition: transform 0.5s cubic-bezier(.68,-0.55,.27,1.55), font-size 0.5s;
+            will-change: transform, font-size;
+        }
+        .balloon-pop.pop {
+            transform: translateX(-50%) scale(1.2) rotate(-10deg);
+            font-size: 140px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Slideshow Websites</h1>
+    <ul>
+        {% for slideshow in slideshows %}
+            <li>
+                <span class="slideshow-link" onclick="openSlideshow({{ slideshow.id }})">{{ slideshow.title }}</span>
+            </li>
+        {% empty %}
+            <li>No slideshows available.</li>
+        {% endfor %}
+    </ul>
+    <script>
+        function openSlideshow(id) {
+            // Balloon pop effect with smoothness
+            let balloon = document.createElement('div');
+            balloon.innerText = '🎈';
+            balloon.className = 'balloon-pop';
+            document.body.appendChild(balloon);
+            setTimeout(() => {
+                balloon.classList.add('pop');
+                balloon.innerText = '💥';
+                setTimeout(() => {
+                    balloon.style.opacity = 0;
+                    setTimeout(() => {
+                        balloon.remove();
+                        window.location.href = '/' + id + '/';
+                    }, 300);
+                }, 600);
+            }, 800);
+        }
+    </script>
+</body>
+</html>
